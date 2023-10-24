@@ -49,7 +49,7 @@ func PingLDB(ldbname string) ([]string, error) {
 	}
 	for e := range entry {
 		if entry[e].IsDir() {
-			ret = append(ret, entry[e].Name())
+			ret = append(ret, ldbname+"/"+entry[e].Name())
 		}
 	}
 

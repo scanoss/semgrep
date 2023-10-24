@@ -143,15 +143,24 @@ func RunServer() error {
 	m.LDBPivotTableName = cfg.LDB.PivotName
 	m.LDBFileTableName = cfg.LDB.FileName
 	m.LDBSemgreptTableName = cfg.LDB.SemgrepName
-	fmt.Println(cfg.LDB.BinPath)
-	fmt.Println(cfg.LDB.EncBinPath)
-	fmt.Println(cfg.LDB.FileName)
-	fmt.Println(cfg.LDB.PivotName)
-	fmt.Println(cfg.LDB.SemgrepName)
+
 	_, errLDB := m.PingLDB("oss")
 	if errLDB != nil {
 		zlog.S.Errorf("Failed to ping LDB: %v", errLDB)
 		return fmt.Errorf("failed to ping LDB: %v", errLDB)
+	}
+	if !m.ContainsTable(tables, cfg.LDB.SemgrepName) {
+		zlog.S.Error("semgrep LDB table not found")
+		//	return fmt.Errorf("%s", "semgrep LDB table not found")
+	}
+	if !m.ContainsTable(tables, cfg.LDB.FileName) {
+		fmt.Println(cfg.LDB.FileName)
+		zlog.S.Error("File LDB table not found")
+		return fmt.Errorf("%s", "file LDB table not found")
+	}
+	if !m.ContainsTable(tables, cfg.LDB.PivotName) {
+		zlog.S.Error("Pivot LDB table not found")
+		return fmt.Errorf("%s", "Pivot LDB table not found")
 	}
 
 	defer closeDbConnection(db)
