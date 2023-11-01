@@ -144,7 +144,7 @@ func RunServer() error {
 	m.LDBFileTableName = cfg.LDB.FileName
 	m.LDBSemgreptTableName = cfg.LDB.SemgrepName
 
-	_, errLDB := m.PingLDB("oss")
+	tables, errLDB := m.PingLDB("oss")
 	if errLDB != nil {
 		zlog.S.Errorf("Failed to ping LDB: %v", errLDB)
 		return fmt.Errorf("failed to ping LDB: %v", errLDB)
