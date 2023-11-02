@@ -51,7 +51,7 @@ func (c SemgrepServer) GetIssues(ctx context.Context, request *common.PurlReques
 	//zlog.S.Infof("Processing Semgrep request: %v", request)
 	// Make sure we have Semgrep data to query
 	reqPurls := request.GetPurls()
-	if reqPurls == nil || len(reqPurls) == 0 {
+	if len(reqPurls) == 0 {
 		statusResp := common.StatusResponse{Status: common.StatusCode_FAILED, Message: "No purls in request data supplied"}
 		return &pb.SemgrepResponse{Status: &statusResp}, errors.New("no purl data supplied")
 	}

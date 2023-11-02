@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"golang.org/x/crypto/salsa20"
 )
 
 type SemgrepItem struct {
@@ -66,28 +65,33 @@ func QueryBulkPivotLDB(keys []string) map[string][]string {
 	if err != nil {
 		return map[string][]string{}
 	}
+	var written int = 0
 	for job := range keys {
 		if keys[job] != "" {
 			line := fmt.Sprintf("select from %s key %s csv hex 32\n", LDBPivotTableName, keys[job])
-			f.WriteString(line)
+			n, err := f.WriteString(line)
+			if err == nil {
+				written += n
+			}
 		}
 	}
 	f.Close()
+	if written > 0 {
+		ldbCmd := exec.Command(LDBBinPath, "-f", name)
 
-	ldbCmd := exec.Command(LDBBinPath, "-f", name)
+		buffer, errLDB := ldbCmd.Output()
+		if errLDB != nil {
+			fmt.Println(errLDB)
+		}
+		//split results line by line
+		//each row contains 3 values: <UrlMD5>,<FileMD5>,unknown
+		lines := strings.Split(string(buffer), "\n")
 
-	buffer, errLDB := ldbCmd.Output()
-	if errLDB != nil {
-		fmt.Println(errLDB)
-	}
-	//split results line by line
-	//each row contains 3 values: <UrlMD5>,<FileMD5>,unknown
-	lines := strings.Split(string(buffer), "\n")
-
-	for i := range lines {
-		fields := strings.Split(lines[i], ",")
-		if len(fields) == 3 {
-			ret[fields[0]] = append(ret[fields[0]], fields[1])
+		for i := range lines {
+			fields := strings.Split(lines[i], ",")
+			if len(fields) == 3 {
+				ret[fields[0]] = append(ret[fields[0]], fields[1])
+			}
 		}
 	}
 	os.Remove(name)
@@ -104,27 +108,32 @@ func QueryBulkSemgrepLDB(items map[string][]string) map[string][]SemgrepItem {
 		return map[string][]SemgrepItem{}
 	}
 	added := make(map[string]bool)
+	var written int = 0
 	for job := range items {
 		fileHashes := items[job]
 		for r := range fileHashes {
 			if _, exist := added[fileHashes[r]]; !exist {
 				line := fmt.Sprintf("select from %s key %s csv hex 16\n", LDBSemgreptTableName, fileHashes[r])
-				f.WriteString(line)
+				n, err := f.WriteString(line)
 				added[fileHashes[r]] = true
+				if err == nil {
+					written += n
+				}
 			}
 		}
 	}
 	f.Close()
+	if written > 0 {
+		ldbCmd := exec.Command(LDBBinPath, "-f", name)
+		buffer, _ := ldbCmd.Output()
+		lines := strings.Split(string(buffer), "\n")
 
-	ldbCmd := exec.Command(LDBBinPath, "-f", name)
-	buffer, _ := ldbCmd.Output()
-	lines := strings.Split(string(buffer), "\n")
-
-	for i := range lines {
-		fields := strings.Split(lines[i], ",")
-		if len(fields) == 5 {
-			issue := SemgrepItem{MD5: fields[0], RuleID: fields[1], From: fields[2], To: fields[3], Severity: fields[4]}
-			issues[fields[0]] = append(issues[fields[0]], issue)
+		for i := range lines {
+			fields := strings.Split(lines[i], ",")
+			if len(fields) == 5 {
+				issue := SemgrepItem{MD5: fields[0], RuleID: fields[1], From: fields[2], To: fields[3], Severity: fields[4]}
+				issues[fields[0]] = append(issues[fields[0]], issue)
+			}
 		}
 	}
 	os.Remove(name)
@@ -141,54 +150,54 @@ func ContainsTable(arr []string, value string) bool {
 
 }
 
-func decrypt(key, nonce, ciphertext []byte) ([]byte, error) {
-
-	out := make([]byte, len(ciphertext))
-	salsa20.XORKeyStream(out, ciphertext, nonce, (*[32]byte)(key))
-	return out, nil
-}
-
 func QueryBulkFileLDB(fileUrl []string) map[string]string {
 	name := fmt.Sprintf("/tmp/%s-file.txt", uuid.New().String())
 	f, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return map[string]string{}
 	}
-
+	var written int = 0
 	for job := range fileUrl {
 		reqFields := strings.Split(fileUrl[job], "-")
 		if len(reqFields) == 2 {
 			line := fmt.Sprintf("select from %s key %s csv hex 32\n", LDBFileTableName, reqFields[0])
-			f.WriteString(line)
+			n, err := f.WriteString(line)
+			if err == nil {
+				written += n
+			}
 		}
 	}
 
 	f.Close()
+	if written > 0 {
+		ldbCmd := exec.Command(LDBEncBinPath, "-f", name)
+		buffer, _ := ldbCmd.Output()
+		res := make(map[string]string)
+		//split results line by line
+		//each row contains 3 values: <UrlMD5>,<FileMD5>,unknown
+		lines := strings.Split(string(buffer), "\n")
 
-	ldbCmd := exec.Command(LDBEncBinPath, "-f", name)
-	buffer, _ := ldbCmd.Output()
-	res := make(map[string]string)
-	//split results line by line
-	//each row contains 3 values: <UrlMD5>,<FileMD5>,unknown
-	lines := strings.Split(string(buffer), "\n")
-
-	for i := range lines {
-		fields := strings.Split(lines[i], ",")
-		if len(fields) == 3 {
-			//fmt.Println(lines[i])
-			k := fields[0] + "-" + fields[1]
-			v := fields[2]
-			res[k] = v
-		}
-	}
-	ret := make(map[string]string)
-	for r := range fileUrl {
-		if v, exists := res[fileUrl[r]]; exists {
-			pair := strings.Split(fileUrl[r], "-")
-			ret[pair[0]] = v
+		for i := range lines {
+			fields := strings.Split(lines[i], ",")
+			if len(fields) == 3 {
+				//fmt.Println(lines[i])
+				k := fields[0] + "-" + fields[1]
+				v := fields[2]
+				res[k] = v
+			}
 		}
 
+		ret := make(map[string]string)
+		for r := range fileUrl {
+			if v, exists := res[fileUrl[r]]; exists {
+				pair := strings.Split(fileUrl[r], "-")
+				ret[pair[0]] = v
+			}
+
+		}
+
+		os.Remove(name)
+		return ret
 	}
-	os.Remove(name)
-	return ret
+	return map[string]string{}
 }

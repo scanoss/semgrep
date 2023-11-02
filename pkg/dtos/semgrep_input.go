@@ -18,7 +18,6 @@ package dtos
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	zlog "scanoss.com/semgrep/pkg/logger"
@@ -36,14 +35,14 @@ type SemgrepInputItem struct {
 // ParseSemgrepInput converts the input byte array to a SemgrepInput structure
 func ParseSemgrepInput(input []byte) (SemgrepInput, error) {
 	fmt.Println(string(input))
-	if input == nil || len(input) == 0 {
-		return SemgrepInput{}, errors.New("no purl info data supplied to parse")
+	if len(input) == 0 {
+		return SemgrepInput{}, fmt.Errorf("no purl info data supplied to parse")
 	}
 	var data SemgrepInput
 	err := json.Unmarshal(input, &data)
 	if err != nil {
 		zlog.S.Errorf("Parse failure: %v", err)
-		return SemgrepInput{}, errors.New(fmt.Sprintf("failed to parse semgrep input data: %v", err))
+		return SemgrepInput{}, fmt.Errorf("failed to parse semgrep input data: %v", err)
 	}
 	zlog.S.Debugf("Parsed data2: %v", data)
 	return data, nil

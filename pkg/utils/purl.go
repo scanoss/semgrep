@@ -48,7 +48,7 @@ func PurlNameFromString(purlString string) (string, error) {
 		return "", fmt.Errorf("no purl string supplied to parse")
 	}
 	matches := pkgRegex.FindStringSubmatch(purlString)
-	if matches != nil && len(matches) > 0 {
+	if len(matches) > 0 {
 		ti := pkgRegex.SubexpIndex("type")
 		ni := pkgRegex.SubexpIndex("name")
 		if ni >= 0 {

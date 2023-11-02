@@ -59,14 +59,14 @@ func ExportSemgrepOutput(output SemgrepOutput) ([]byte, error) {
 
 // ParseSengreoOutput converts the input byte array to a SemgrepOutput structure
 func ParseSemgrepOutput(input []byte) (SemgrepOutput, error) {
-	if input == nil || len(input) == 0 {
-		return SemgrepOutput{}, errors.New("no output Semgrep data supplied to parse")
+	if len(input) == 0 {
+		return SemgrepOutput{}, fmt.Errorf("no output Semgrep data supplied to parse")
 	}
 	var data SemgrepOutput
 	err := json.Unmarshal(input, &data)
 	if err != nil {
 		zlog.S.Errorf("Parse failure: %v", err)
-		return SemgrepOutput{}, errors.New(fmt.Sprintf("failed to parse Semgrep output data: %v", err))
+		return SemgrepOutput{}, fmt.Errorf("failed to parse Semgrep output data: %v", err)
 	}
 	zlog.S.Debugf("Parsed data2: %v", data)
 	return data, nil
