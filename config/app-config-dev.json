@@ -1,8 +1,16 @@
 {
   "App": {
-    "Name": "Semgrep Service",
+    "Name": "SCANOSS Semgrep Service",
     "Debug": true,
-    "Mode":  "dev"
+    "Mode":  "dev",
+    "Port": "50055"
+  },
+  "LDB": {
+    "BinPath": "/usr/local/bin/ldb",
+    "EncBinPath": "/usr/local/bin/ldb_enc",
+    "FileName": "oss/file",
+    "SemgrepName": "oss/semgrep",
+    "PivotName": "oss/pivot"
   },
   "Database": {
     "Driver": "postgres",
@@ -10,5 +18,8 @@
     "User":   "scanoss",
     "Passwd": "secret123!",
     "Schema": "scanoss"
+  },
+  "Components": {
+    "CommitMissing": false
   }
 }
