@@ -38,10 +38,8 @@ import (
 	"scanoss.com/semgrep/pkg/service"
 )
 
-/*
 //go:generate bash ../../get_version.sh
 //go:embed version.txt
-*/
 var version string
 
 // getConfig checks command line args for option to feed into the config parser

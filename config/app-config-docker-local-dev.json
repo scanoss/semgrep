@@ -1,6 +1,6 @@
 {
   "App": {
-    "Name": "Semgrep Service",
+    "Name": "SCANOSS Semgrep Service",
     "Debug": true,
     "Mode":  "dev"
   },

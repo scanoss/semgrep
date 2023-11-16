@@ -1,4 +1,4 @@
-FROM golang:1.17 as build
+FROM golang:1.19 as build
 
 WORKDIR /app
 
@@ -10,15 +10,15 @@ RUN go mod download
 COPY . ./
 
 RUN go generate ./pkg/cmd/server.go
-RUN go build -o ./scanoss-dependencies ./cmd/server
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -o ./scanoss-semgrep-api ./cmd/server
 
-FROM debian:buster-slim
+
+FROM debian:buster-slim as production
 
 WORKDIR /app
  
-COPY --from=build /app/scanoss-dependencies /app/scanoss-dependencies
+COPY --from=build /app/scanoss-semgrep-api /app/scanoss-semgrep-api
 
-EXPOSE 50051
+EXPOSE 50055
 
-ENTRYPOINT ["./scanoss-dependencies"]
-#CMD ["--help"]
+ENTRYPOINT ["./scanoss-semgrep-api"]
