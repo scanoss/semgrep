@@ -158,3 +158,54 @@ func (c SemgrepServer) GetIssues(ctx context.Context, request *common.PurlReques
 		})
 	return response, nil
 }
+
+func (c SemgrepServer) GetComponentsIssues(ctx context.Context, request *common.ComponentsRequest) (*pb.ComponentsIssueResponse, error) {
+	response := handleLegacyRequest(
+		ctx,
+		request,
+		c.semgrepUseCase.GetIssues,
+		componentsToComponentsDTO,
+		// Response builder for SemgrepResponse
+		func(ctx context.Context, s *zap.SugaredLogger, semgrep dtos.SemgrepOutput, err error) *pb.ComponentsIssueResponse {
+			statusResp := &common.StatusResponse{Status: common.StatusCode_SUCCESS, Message: "Success"}
+			if err != nil {
+				statusResp = se.HandleServiceError(ctx, s, err)
+				return &pb.ComponentsIssueResponse{Status: statusResp}
+			}
+			resp, err := convertToComponentsIssues(semgrep)
+			if err != nil {
+				statusResp = se.HandleServiceError(ctx, s, err)
+				return &pb.ComponentsIssueResponse{Status: statusResp}
+			}
+			resp.Status = statusResp
+			return resp
+		})
+	return response, nil
+}
+
+func (c SemgrepServer) GetComponentIssues(ctx context.Context, request *common.ComponentRequest) (*pb.ComponentIssueResponse, error) {
+	req := &common.ComponentsRequest{
+		Components: []*common.ComponentRequest{request},
+	}
+	response := handleLegacyRequest(
+		ctx,
+		req,
+		c.semgrepUseCase.GetIssues,
+		componentsToComponentsDTO,
+		// Response builder for SemgrepResponse
+		func(ctx context.Context, s *zap.SugaredLogger, semgrep dtos.SemgrepOutput, err error) *pb.ComponentIssueResponse {
+			statusResp := &common.StatusResponse{Status: common.StatusCode_SUCCESS, Message: "Success"}
+			if err != nil {
+				statusResp = se.HandleServiceError(ctx, s, err)
+				return &pb.ComponentIssueResponse{Status: statusResp}
+			}
+			resp, err := convertToComponentIssues(semgrep)
+			if err != nil {
+				statusResp = se.HandleServiceError(ctx, s, err)
+				return &pb.ComponentIssueResponse{Status: statusResp}
+			}
+			resp.Status = statusResp
+			return resp
+		})
+	return response, nil
+}
