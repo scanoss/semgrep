@@ -26,13 +26,27 @@ import (
 	zlog "scanoss.com/semgrep/pkg/logger"
 )
 
-// convertPurlRequestInput converts a Purl Request structure into an internal Semgrep Input struct
 func convertSemgrepInput(request *common.PurlRequest) ([]dtos.ComponentDTO, error) {
 	if request == nil || request.Purls == nil || len(request.Purls) == 0 {
 		return []dtos.ComponentDTO{}, se.NewBadRequestError("Request validation failed: 'purls' array is required and must contain at least one component", nil)
 	}
 	componentDTOS := make([]dtos.ComponentDTO, 0, len(request.Purls))
 	for i, purl := range request.Purls {
+		componentDTOS[i] = dtos.ComponentDTO{
+			Purl:        purl.Purl,
+			Requirement: purl.Requirement,
+		}
+	}
+	return componentDTOS, nil
+}
+
+// convertPurlRequestInput converts a Purl Request structure into an internal Semgrep Input struct
+func componentsToComponentsDTO(request *common.ComponentsRequest) ([]dtos.ComponentDTO, error) {
+	if request == nil || request.Components == nil || len(request.Components) == 0 {
+		return []dtos.ComponentDTO{}, se.NewBadRequestError("Request validation failed: 'purls' array is required and must contain at least one component", nil)
+	}
+	componentDTOS := make([]dtos.ComponentDTO, 0, len(request.Components))
+	for i, purl := range request.Components {
 		componentDTOS[i] = dtos.ComponentDTO{
 			Purl:        purl.Purl,
 			Requirement: purl.Requirement,
@@ -56,4 +70,39 @@ func convertSemgrepResponse(output dtos.SemgrepOutput) (*pb.SemgrepResponse, err
 		return &pb.SemgrepResponse{}, se.NewInternalError("Problem unmarshalling Semgrep request output", err)
 	}
 	return &depResp, nil
+}
+
+// convertSemgrepOutput converts an internal Semgrep Output structure into a SemgrepResponse struct
+func convertToComponentsIssues(output dtos.SemgrepOutput) (*pb.ComponentsIssueResponse, error) {
+	response := &pb.ComponentsIssueResponse{
+		Components: []*pb.ComponentIssueInfo{},
+	}, nil
+	for _, o := range output.Purls {
+		files := []*pb.File{}
+		data, err := json.Marshal(o.Files)
+		if err != nil {
+			return &pb.ComponentsIssueResponse{}, se.NewInternalError("Problem marshalling Semgrep request output", err)
+		}
+		json.Unmarshal(data, &files)
+		componentIssueInfo := &pb.ComponentIssueInfo{
+			Purl:        o.Purl,
+			Version:     o.Version,
+			Requirement: o.Version,
+			Files:       files,
+		}
+		response.Components = append(response.Components, componentIssueInfo)
+	}
+	return response, nil
+}
+
+// convertSemgrepOutput converts an internal Semgrep Output structure into a SemgrepResponse struct
+func convertToComponentIssues(output dtos.SemgrepOutput) (*pb.ComponentIssueResponse, error) {
+	componentsIssuesResponse, err := convertToComponentsIssues(output)
+	if err != nil {
+		return &pb.ComponentIssueResponse{}, err
+	}
+	if componentsIssuesResponse.Components == nil && len(componentsIssuesResponse.Components) == 0 {
+		return &pb.ComponentIssueResponse{}, se.NewNotFoundError("Component not found")
+	}
+	return &pb.ComponentIssueResponse{Component: componentsIssuesResponse.Components[0]}
 }
