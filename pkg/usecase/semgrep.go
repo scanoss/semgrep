@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (C) 2018-2022 SCANOSS.COM
+ * Copyright (C) 2018-2025 SCANOSS.COM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,27 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-/*
-known purls:
- {
-    "purls": [
-        {
-            "purl": "pkg:github/movingblocks/gestalt",
-            "requirement": "7.1.0"
-        },
-        {
-            "purl": "pkg:github/apache/axis2-java",
-            "requirement": "v2-m2"
-        },
-        {
-            "purl": "pkg:gitee/echomyecho/druid-release"
-        },
-        {
-            "purl": "pkg:github/eclipse/eclipse.platform.debug",
-            "requirement": "v200812050-1330"
-        }
-    ]
-}*/
+
 package usecase
 
 import (
@@ -42,15 +22,14 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 	"scanoss.com/semgrep/pkg/dtos"
-	zlog "scanoss.com/semgrep/pkg/logger"
 	"scanoss.com/semgrep/pkg/models"
 	"scanoss.com/semgrep/pkg/utils"
 )
 
 type SemgrepUseCase struct {
 	ctx     context.Context
-	conn    *sqlx.Conn
 	allUrls *models.AllUrlsModel
 }
 type SemgrepWorkerStruct struct {
@@ -66,43 +45,35 @@ type InternalQuery struct {
 	SelectedURLS    []models.AllUrl
 }
 
-func NewSemgrep(ctx context.Context, conn *sqlx.Conn) *SemgrepUseCase {
-	return &SemgrepUseCase{ctx: ctx, conn: conn,
-		allUrls: models.NewAllUrlModel(ctx, conn, models.NewProjectModel(ctx, conn)),
+func NewSemgrep(db *sqlx.DB) *SemgrepUseCase {
+	return &SemgrepUseCase{
+		allUrls: models.NewAllUrlModel(db, models.NewProjectModel(db)),
 	}
 }
 
 // GetIssues takes the Semgrep Input request, searches for Semgrep usages and returns a SemgrepOutput struct
-func (d SemgrepUseCase) GetIssues(request dtos.SemgrepInput) (dtos.SemgrepOutput, error) {
-
-	if len(request.Purls) == 0 {
-		zlog.S.Info("Empty List of Purls supplied")
-	}
-	if len(request.Purls) == 0 {
-		zlog.S.Info("Empty List of Purls supplied")
-	}
+func (d SemgrepUseCase) GetIssues(ctx context.Context, s *zap.SugaredLogger, components []dtos.ComponentDTO) (dtos.SemgrepOutput, error) {
 	query := []InternalQuery{}
 	purlsToQuery := []utils.PurlReq{}
-
 	//Prepare purls to query
-	for _, purl := range request.Purls {
+	for _, c := range components {
 
-		purlReq := strings.Split(purl.Purl, "@") // Remove any version specific info from the PURL
+		purlReq := strings.Split(c.Purl, "@") // Remove any version specific info from the PURL
 		if purlReq[0] == "" {
 			continue
 		}
 		if len(purlReq) > 1 {
-			purl.Requirement = purlReq[1]
+			c.Requirement = purlReq[1]
 		}
 
-		purlName, err := utils.PurlNameFromString(purl.Purl) // Make sure we just have the bare minimum for a Purl Name
+		purlName, err := utils.PurlNameFromString(c.Purl) // Make sure we just have the bare minimum for a Purl Name
 		if err == nil {
-			purlsToQuery = append(purlsToQuery, utils.PurlReq{Purl: purlName, Version: purl.Requirement})
+			purlsToQuery = append(purlsToQuery, utils.PurlReq{Purl: purlName, Version: c.Requirement})
 		}
-		query = append(query, InternalQuery{CompletePurl: purl.Purl, Requirement: purl.Requirement, PurlName: purlName})
+		query = append(query, InternalQuery{CompletePurl: c.Purl, Requirement: c.Requirement, PurlName: purlName})
 	}
 
-	url, err := d.allUrls.GetUrlsByPurlList(purlsToQuery)
+	url, err := d.allUrls.GetUrlsByPurlList(ctx, s, purlsToQuery)
 	_ = err
 
 	purlMap := make(map[string][]models.AllUrl)
@@ -130,14 +101,6 @@ func (d SemgrepUseCase) GetIssues(request dtos.SemgrepInput) (dtos.SemgrepOutput
 	//Create a map containing the Semgrep issue for each file
 	semgrep := models.QueryBulkSemgrepLDB(files)
 
-	/*mapSemgrep := make(map[string][]models.SemgrepItem)
-
-	//Remove duplicate algorithms for the same file
-	for k, v := range files {
-		for f := range v {
-			mapSemgrep[k] = append(mapSemgrep[k], semgrep[v[f]]...)
-		}
-	}*/
 	retV := dtos.SemgrepOutput{}
 
 	//Create the response
