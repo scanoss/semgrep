@@ -19,7 +19,11 @@ package service
 
 import (
 	"context"
-	"errors"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
+	"go.uber.org/zap"
+	"scanoss.com/semgrep/pkg/dtos"
+	se "scanoss.com/semgrep/pkg/errors"
 
 	"github.com/jmoiron/sqlx"
 	common "github.com/scanoss/papi/api/commonv2"
@@ -29,71 +33,128 @@ import (
 	"scanoss.com/semgrep/pkg/usecase"
 )
 
+// SemgrepServer implements the gRPC service for Semgrep operations.
+// It handles security vulnerability scanning requests and manages the interaction
+// between the gRPC layer and the business logic layer.
 type SemgrepServer struct {
 	pb.SemgrepServer
-	db     *sqlx.DB
-	config *myconfig.ServerConfig
+	db             *sqlx.DB                // Database connection for persistence
+	config         *myconfig.ServerConfig  // Server configuration settings
+	semgrepUseCase *usecase.SemgrepUseCase // Business logic handler for Semgrep operations
 }
 
-// NewSemgrepServer creates a new instance of Semgrep Server
+// NewSemgrepServer creates a new instance of Semgrep Server.
+// It initializes the server with database connection, configuration, and use case handlers.
+//
+// Parameters:
+//   - db: Database connection for data operations
+//   - config: Server configuration settings
+//
+// Returns:
+//   - pb.SemgrepServer: Initialized gRPC server instance
 func NewSemgrepServer(db *sqlx.DB, config *myconfig.ServerConfig) pb.SemgrepServer {
-	return &SemgrepServer{db: db, config: config}
+	return &SemgrepServer{
+		db:             db,
+		config:         config,
+		semgrepUseCase: usecase.NewSemgrep(db),
+	}
 }
 
-// Echo sends back the same message received
+// Echo sends back the same message received.
+// This endpoint is used for health checks and connectivity testing.
+//
+// Parameters:
+//   - ctx: Request context for cancellation and timeout
+//   - request: Echo request containing the message to echo back
+//
+// Returns:
+//   - *common.EchoResponse: Response containing the echoed message
+//   - error: Always nil as this endpoint doesn't fail
 func (c SemgrepServer) Echo(ctx context.Context, request *common.EchoRequest) (*common.EchoResponse, error) {
 	zlog.S.Infof("Received (%v): %v", ctx, request.GetMessage())
 	return &common.EchoResponse{Message: request.GetMessage()}, nil
 }
 
-func (c SemgrepServer) GetIssues(ctx context.Context, request *common.PurlRequest) (*pb.SemgrepResponse, error) {
+// ResponseBuilder is a generic function type for building typed responses from Semgrep output.
+// It takes the processing result and any errors, then constructs the appropriate response type.
+type ResponseBuilder[T any] func(ctx context.Context, s *zap.SugaredLogger, semgrep dtos.SemgrepOutput, err error) T
 
-	//zlog.S.Infof("Processing Semgrep request: %v", request)
-	// Make sure we have Semgrep data to query
-	reqPurls := request.GetPurls()
-	if len(reqPurls) == 0 {
-		statusResp := common.StatusResponse{Status: common.StatusCode_FAILED, Message: "No purls in request data supplied"}
-		return &pb.SemgrepResponse{Status: &statusResp}, errors.New("no purl data supplied")
-	}
-	dtoRequest, err := convertSemgrepInput(request) // Convert to internal DTO for processing
-	if err != nil {
-		statusResp := common.StatusResponse{Status: common.StatusCode_FAILED, Message: "Problem parsing Semgrep input data"}
-		return &pb.SemgrepResponse{Status: &statusResp}, errors.New("problem parsing Semgrep input data")
-	}
-	conn, err := c.db.Connx(ctx) // Get a connection from the pool
-	if err != nil {
-		zlog.S.Errorf("Failed to get a database connection from the pool: %v", err)
-		statusResp := common.StatusResponse{Status: common.StatusCode_FAILED, Message: "Failed to get database pool connection"}
-		return &pb.SemgrepResponse{Status: &statusResp}, errors.New("problem getting database pool connection")
-	}
-	defer closeDbConnection(conn)
-	// Search the KB for information about each Semgrepgraphy
-	semgrepUc := usecase.NewSemgrep(ctx, conn)
-	dtoSemgrep, err := semgrepUc.GetIssues(dtoRequest)
+// RequestConverter is a generic function type for converting incoming gRPC requests
+// to internal ComponentDTO format used by the business logic layer.
+type RequestConverter[R any] func(R) ([]dtos.ComponentDTO, error)
 
-	if err != nil {
-		zlog.S.Errorf("Failed to get Issues: %v", err)
-		statusResp := common.StatusResponse{Status: common.StatusCode_FAILED, Message: "Problems encountered extracting Semgrep data"}
-		return &pb.SemgrepResponse{Status: &statusResp}, nil
-	}
-	//zlog.S.Debugf("Parsed Semgrep: %+v", dtoSemgrep)
+// UseCaseHandler defines the function signature for business logic handlers.
+// It processes component DTOs and returns Semgrep analysis results.
+type UseCaseHandler func(context.Context, *zap.SugaredLogger, []dtos.ComponentDTO) (dtos.SemgrepOutput, error)
 
-	semgrepResponse, err := convertSemgrepOutput(dtoSemgrep) // Convert the internal data into a response object
+// handleLegacyRequest provides a generic request handling pattern for legacy endpoints.
+// It orchestrates the request conversion, business logic execution, and response building.
+//
+// Type Parameters:
+//   - R: Request type
+//   - T: Response type
+//
+// Parameters:
+//   - ctx: Request context
+//   - req: The incoming request
+//   - useCaseHandler: Function to execute business logic
+//   - requestConverter: Function to convert request to internal format
+//   - responseBuilder: Function to build the typed response
+//
+// Returns:
+//   - T: The built response of the specified type
+func handleLegacyRequest[R any, T any](
+	ctx context.Context,
+	req R,
+	useCaseHandler UseCaseHandler,
+	requestConverter RequestConverter[R],
+	responseBuilder ResponseBuilder[T],
+) T {
+	s := ctxzap.Extract(ctx).Sugar()
+	dtoRequest, err := requestConverter(req) // Convert to internal DTO for processing
 	if err != nil {
-		zlog.S.Errorf("Failed to covnert parsed dependencies: %v", err)
-		statusResp := common.StatusResponse{Status: common.StatusCode_FAILED, Message: "Problems encountered extracting Semgrep data"}
-		return &pb.SemgrepResponse{Status: &statusResp}, nil
+		responseBuilder(ctx, s, dtos.SemgrepOutput{}, err)
 	}
-	// Set the status and respond with the data
-	statusResp := common.StatusResponse{Status: common.StatusCode_SUCCESS, Message: "Success"}
-	return &pb.SemgrepResponse{Purls: semgrepResponse.Purls, Status: &statusResp}, nil
+
+	dtoSemgrep, err := useCaseHandler(ctx, s, dtoRequest)
+	return responseBuilder(ctx, s, dtoSemgrep, err)
 }
 
-// closeDbConnection closes the specified database connection
-func closeDbConnection(conn *sqlx.Conn) {
-	zlog.S.Debugf("Closing DB Connection: %v", conn)
-	err := conn.Close()
-	if err != nil {
-		zlog.S.Warnf("Warning: Problem closing database connection: %v", err)
-	}
+// GetIssues retrieves security issues for the specified package URLs (PURLs).
+// It performs vulnerability scanning and returns identified security issues.
+//
+// Parameters:
+//   - ctx: Request context for cancellation and timeout
+//   - request: PURL request containing package identifiers to scan
+//
+// Returns:
+//   - *pb.SemgrepResponse: Response containing found security issues with status
+//   - error: Always nil (errors are embedded in response status)
+//
+// The method uses handleLegacyRequest to process the request through the following pipeline:
+// 1. Convert PURL request to internal component DTOs
+// 2. Execute Semgrep analysis via use case handler
+// 3. Build response with appropriate status codes
+func (c SemgrepServer) GetIssues(ctx context.Context, request *common.PurlRequest) (*pb.SemgrepResponse, error) {
+	response := handleLegacyRequest(
+		ctx,
+		request,
+		c.semgrepUseCase.GetIssues,
+		convertSemgrepInput,
+		// Response builder for SemgrepResponse
+		func(ctx context.Context, s *zap.SugaredLogger, semgrep dtos.SemgrepOutput, err error) *pb.SemgrepResponse {
+			statusResp := &common.StatusResponse{Status: common.StatusCode_SUCCESS, Message: "Success"}
+			if err != nil {
+				statusResp = se.HandleServiceError(ctx, s, err)
+				return &pb.SemgrepResponse{Status: statusResp}
+			}
+			resp, err := convertSemgrepResponse(semgrep)
+			if err != nil {
+				statusResp = se.HandleServiceError(ctx, s, err)
+				return &pb.SemgrepResponse{Status: statusResp}
+			}
+			resp.Status = statusResp
+			return resp
+		})
+	return response, nil
 }

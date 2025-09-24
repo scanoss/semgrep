@@ -25,6 +25,7 @@ import (
 
 	semver "github.com/Masterminds/semver/v3"
 	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 	zlog "scanoss.com/semgrep/pkg/logger"
 
 	"scanoss.com/semgrep/pkg/utils"
@@ -32,7 +33,7 @@ import (
 
 type AllUrlsModel struct {
 	ctx     context.Context
-	conn    *sqlx.Conn
+	db      *sqlx.DB
 	project *projectModel
 }
 
@@ -48,13 +49,13 @@ type AllUrl struct {
 }
 
 // NewAllUrlModel creates a new instance of the All URL Model
-func NewAllUrlModel(ctx context.Context, conn *sqlx.Conn, project *projectModel) *AllUrlsModel {
-	return &AllUrlsModel{ctx: ctx, conn: conn, project: project}
+func NewAllUrlModel(db *sqlx.DB, project *projectModel) *AllUrlsModel {
+	return &AllUrlsModel{db: db, project: project}
 }
 
-func (m *AllUrlsModel) GetUrlsByPurlList(list []utils.PurlReq) ([]AllUrl, error) {
+func (m *AllUrlsModel) GetUrlsByPurlList(ctx context.Context, s *zap.SugaredLogger, list []utils.PurlReq) ([]AllUrl, error) {
 	if len(list) == 0 {
-		zlog.S.Errorf("Please specify a valid Purl list to query")
+		s.Errorf("Please specify a valid Purl list to query")
 		return []AllUrl{}, errors.New("please specify a valid Purl list to query")
 	}
 	purlNames := []string{}
@@ -72,9 +73,9 @@ func (m *AllUrlsModel) GetUrlsByPurlList(list []utils.PurlReq) ([]AllUrl, error)
 		" and package_hash!= '' ORDER BY date DESC;"
 
 	var allUrls []AllUrl
-	err := m.conn.SelectContext(m.ctx, &allUrls, stmt)
+	err := m.db.SelectContext(ctx, &allUrls, stmt)
 	if err != nil {
-		zlog.S.Errorf("Failed to query a list of urls:  %v", err)
+		s.Errorf("Failed to query a list of urls:  %v", err)
 		return []AllUrl{}, fmt.Errorf("failed to query the all urls table: %v", err)
 	}
 	//zlog.S.Debugf("Found %v results for %v, %v.", len(allUrls), purlType, purlName)
@@ -122,7 +123,7 @@ func (m *AllUrlsModel) GetUrlsByPurlNameType(purlName, purlType, purlReq string)
 		return AllUrl{}, errors.New("please specify a valid Purl Type to query")
 	}
 	var allUrls []AllUrl
-	err := m.conn.SelectContext(m.ctx, &allUrls,
+	err := m.db.SelectContext(m.ctx, &allUrls,
 		"SELECT package_hash AS url_hash, component, v.version_name AS version, v.semver AS semver, "+
 			"purl_name, mine_id FROM all_urls u "+
 			"LEFT JOIN mines m ON u.mine_id = m.id "+
@@ -154,7 +155,7 @@ func (m *AllUrlsModel) GetUrlsByPurlNameTypeVersion(purlName, purlType, purlVers
 		return AllUrl{}, errors.New("please specify a valid Purl Version to query")
 	}
 	var allUrls []AllUrl
-	err := m.conn.SelectContext(m.ctx, &allUrls,
+	err := m.db.SelectContext(m.ctx, &allUrls,
 		"SELECT package_hash AS url_hash, component, v.version_name AS version, v.semver AS semver, "+
 			"purl_name, mine_id FROM all_urls u "+
 			"LEFT JOIN mines m ON u.mine_id = m.id "+

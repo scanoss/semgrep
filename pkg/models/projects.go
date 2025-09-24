@@ -28,8 +28,8 @@ import (
 )
 
 type projectModel struct {
-	ctx  context.Context
-	conn *sqlx.Conn
+	ctx context.Context
+	db  *sqlx.DB
 }
 
 type Project struct {
@@ -41,8 +41,8 @@ type Project struct {
 }
 
 // NewProjectModel creates a new instance of the Project Model
-func NewProjectModel(ctx context.Context, conn *sqlx.Conn) *projectModel {
-	return &projectModel{ctx: ctx, conn: conn}
+func NewProjectModel(db *sqlx.DB) *projectModel {
+	return &projectModel{db: db}
 }
 
 // GetProjectsByPurlName searches the projects' table for details about Purl Name and Type
@@ -56,7 +56,7 @@ func (m *projectModel) GetProjectsByPurlName(purlName string, purlType string) (
 		return nil, errors.New("please specify a valid Purl Type to query")
 	}
 	var allProjects []Project
-	err := m.conn.SelectContext(m.ctx, &allProjects,
+	err := m.db.SelectContext(m.ctx, &allProjects,
 		"SELECT purl_name, component,"+
 			" l.license_name AS license, l.spdx_id AS license_id, l.is_spdx AS is_spdx FROM projects p"+
 			" LEFT JOIN mines m ON p.mine_id = m.id"+
@@ -80,7 +80,7 @@ func (m *projectModel) GetProjectByPurlName(purlName string, mineId int32) (Proj
 		zlog.S.Error("Please specify a valid Mine ID to query")
 		return Project{}, errors.New("please specify a valid Mine ID to query")
 	}
-	rows, err := m.conn.QueryxContext(m.ctx,
+	rows, err := m.db.QueryxContext(m.ctx,
 		"SELECT purl_name, component, l.license_name AS license, l.spdx_id AS license_id, l.is_spdx AS is_spdx FROM projects p"+
 			" LEFT JOIN licenses l ON p.license_id = l.id"+
 			" WHERE purl_name = $1 AND mine_id = $2",

@@ -18,42 +18,42 @@ package service
 
 import (
 	"encoding/json"
-	"errors"
 
 	common "github.com/scanoss/papi/api/commonv2"
 	pb "github.com/scanoss/papi/api/semgrepv2"
 	"scanoss.com/semgrep/pkg/dtos"
+	se "scanoss.com/semgrep/pkg/errors"
 	zlog "scanoss.com/semgrep/pkg/logger"
 )
 
 // convertPurlRequestInput converts a Purl Request structure into an internal Semgrep Input struct
-func convertSemgrepInput(request *common.PurlRequest) (dtos.SemgrepInput, error) {
-	data, err := json.Marshal(request)
-	if err != nil {
-		zlog.S.Errorf("Problem marshalling Semgrep request input: %v", err)
-		return dtos.SemgrepInput{}, errors.New("problem marshalling Semgrep input")
+func convertSemgrepInput(request *common.PurlRequest) ([]dtos.ComponentDTO, error) {
+	if request == nil || request.Purls == nil || len(request.Purls) == 0 {
+		return []dtos.ComponentDTO{}, se.NewBadRequestError("Request validation failed: 'purls' array is required and must contain at least one component", nil)
 	}
-	dtoRequest, err := dtos.ParseSemgrepInput(data)
-	if err != nil {
-		zlog.S.Errorf("Problem parsing Semgrep request input: %v", err)
-		return dtos.SemgrepInput{}, errors.New("problem parsing Semgrep input")
+	componentDTOS := make([]dtos.ComponentDTO, 0, len(request.Purls))
+	for i, purl := range request.Purls {
+		componentDTOS[i] = dtos.ComponentDTO{
+			Purl:        purl.Purl,
+			Requirement: purl.Requirement,
+		}
 	}
-	return dtoRequest, nil
+	return componentDTOS, nil
 }
 
 // convertSemgrepOutput converts an internal Semgrep Output structure into a SemgrepResponse struct
-func convertSemgrepOutput(output dtos.SemgrepOutput) (*pb.SemgrepResponse, error) {
+func convertSemgrepResponse(output dtos.SemgrepOutput) (*pb.SemgrepResponse, error) {
 	data, err := json.Marshal(output)
 	if err != nil {
 		zlog.S.Errorf("Problem marshalling Semgrep request output: %v", err)
-		return &pb.SemgrepResponse{}, errors.New("problem marshalling Semgrep output")
+		return &pb.SemgrepResponse{}, se.NewInternalError("Problem marshalling Semgrep request output", err)
 	}
 	//zlog.S.Debugf("Parsed data: %v", string(data))
 	var depResp pb.SemgrepResponse
 	err = json.Unmarshal(data, &depResp)
 	if err != nil {
 		zlog.S.Errorf("Problem unmarshalling Semgrep request output: %v", err)
-		return &pb.SemgrepResponse{}, errors.New("problem unmarshalling Semgrep output")
+		return &pb.SemgrepResponse{}, se.NewInternalError("Problem unmarshalling Semgrep request output", err)
 	}
 	return &depResp, nil
 }
