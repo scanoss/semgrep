@@ -31,11 +31,11 @@ func convertSemgrepInput(request *common.PurlRequest) ([]dtos.ComponentDTO, erro
 		return []dtos.ComponentDTO{}, se.NewBadRequestError("Request validation failed: 'purls' array is required and must contain at least one component", nil)
 	}
 	componentDTOS := make([]dtos.ComponentDTO, 0, len(request.Purls))
-	for i, purl := range request.Purls {
-		componentDTOS[i] = dtos.ComponentDTO{
+	for _, purl := range request.Purls {
+		componentDTOS = append(componentDTOS, dtos.ComponentDTO{
 			Purl:        purl.Purl,
 			Requirement: purl.Requirement,
-		}
+		})
 	}
 	return componentDTOS, nil
 }
@@ -46,11 +46,11 @@ func componentsToComponentsDTO(request *common.ComponentsRequest) ([]dtos.Compon
 		return []dtos.ComponentDTO{}, se.NewBadRequestError("Request validation failed: 'purls' array is required and must contain at least one component", nil)
 	}
 	componentDTOS := make([]dtos.ComponentDTO, 0, len(request.Components))
-	for i, purl := range request.Components {
-		componentDTOS[i] = dtos.ComponentDTO{
+	for _, purl := range request.Components {
+		componentDTOS = append(componentDTOS, dtos.ComponentDTO{
 			Purl:        purl.Purl,
 			Requirement: purl.Requirement,
-		}
+		})
 	}
 	return componentDTOS, nil
 }
