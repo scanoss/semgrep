@@ -24,7 +24,7 @@ import (
 	"scanoss.com/semgrep/pkg/cmd"
 )
 
-// main starts the gRPC Semgrep Service
+// main starts the gRPC Semgrep Service.
 func main() {
 	// Launch the Semgrep Server Service
 	if err := cmd.RunServer(); err != nil {

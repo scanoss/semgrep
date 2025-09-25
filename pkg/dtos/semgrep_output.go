@@ -47,7 +47,7 @@ type IssueItem struct {
 	Severity string `json:"severity"`
 }
 
-// ExportSemgrepOutput converts the SemgrepOutput structure to a byte array
+// ExportSemgrepOutput converts the SemgrepOutput structure to a byte array.
 func ExportSemgrepOutput(output SemgrepOutput) ([]byte, error) {
 	data, err := json.Marshal(output)
 	if err != nil {
@@ -57,7 +57,7 @@ func ExportSemgrepOutput(output SemgrepOutput) ([]byte, error) {
 	return data, nil
 }
 
-// ParseSengreoOutput converts the input byte array to a SemgrepOutput structure
+// ParseSengreoOutput converts the input byte array to a SemgrepOutput structure.
 func ParseSemgrepOutput(input []byte) (SemgrepOutput, error) {
 	if len(input) == 0 {
 		return SemgrepOutput{}, fmt.Errorf("no output Semgrep data supplied to parse")

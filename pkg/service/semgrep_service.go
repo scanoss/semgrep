@@ -120,21 +120,7 @@ func handleLegacyRequest[R any, T any](
 	return responseBuilder(ctx, s, dtoSemgrep, err)
 }
 
-// GetIssues retrieves security issues for the specified package URLs (PURLs).
-// It performs vulnerability scanning and returns identified security issues.
-//
-// Parameters:
-//   - ctx: Request context for cancellation and timeout
-//   - request: PURL request containing package identifiers to scan
-//
-// Returns:
-//   - *pb.SemgrepResponse: Response containing found security issues with status
-//   - error: Always nil (errors are embedded in response status)
-//
-// The method uses handleLegacyRequest to process the request through the following pipeline:
-// 1. Convert PURL request to internal component DTOs
-// 2. Execute Semgrep analysis via use case handler
-// 3. Build response with appropriate status codes
+// 3. Build response with appropriate status codes.
 func (c SemgrepServer) GetIssues(ctx context.Context, request *common.PurlRequest) (*pb.SemgrepResponse, error) {
 	response := handleLegacyRequest(
 		ctx,

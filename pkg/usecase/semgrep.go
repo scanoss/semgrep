@@ -29,7 +29,6 @@ import (
 )
 
 type SemgrepUseCase struct {
-	ctx     context.Context
 	allUrls *models.AllUrlsModel
 }
 type SemgrepWorkerStruct struct {
@@ -42,22 +41,21 @@ type InternalQuery struct {
 	PurlName        string
 	Requirement     string
 	SelectedVersion string
-	SelectedURLS    []models.AllUrl
+	SelectedURLS    []models.AllURL
 }
 
 func NewSemgrep(db *sqlx.DB) *SemgrepUseCase {
 	return &SemgrepUseCase{
-		allUrls: models.NewAllUrlModel(db, models.NewProjectModel(db)),
+		allUrls: models.NewAllURLModel(db, models.NewProjectModel(db)),
 	}
 }
 
-// GetIssues takes the Semgrep Input request, searches for Semgrep usages and returns a SemgrepOutput struct
+// GetIssues takes the Semgrep Input request, searches for Semgrep usages and returns a SemgrepOutput struct.
 func (d SemgrepUseCase) GetIssues(ctx context.Context, s *zap.SugaredLogger, components []dtos.ComponentDTO) (dtos.SemgrepOutput, error) {
 	query := []InternalQuery{}
 	purlsToQuery := []utils.PurlReq{}
-	//Prepare purls to query
+	// Prepare purls to query
 	for _, c := range components {
-
 		purlReq := strings.Split(c.Purl, "@") // Remove any version specific info from the PURL
 		if purlReq[0] == "" {
 			continue
@@ -76,7 +74,7 @@ func (d SemgrepUseCase) GetIssues(ctx context.Context, s *zap.SugaredLogger, com
 	url, err := d.allUrls.GetUrlsByPurlList(ctx, s, purlsToQuery)
 	_ = err
 
-	purlMap := make(map[string][]models.AllUrl)
+	purlMap := make(map[string][]models.AllURL)
 
 	///Order Urls in a map for fast access by purlname
 	for r := range url {
@@ -85,55 +83,54 @@ func (d SemgrepUseCase) GetIssues(ctx context.Context, s *zap.SugaredLogger, com
 	urlHashes := []string{}
 	// For all the requested purls, choose the closest urls that match
 	for r := range query {
-		query[r].SelectedURLS, err = models.PickClosestUrls(purlMap[query[r].PurlName], query[r].PurlName, "", query[r].Requirement)
+		query[r].SelectedURLS, _ = models.PickClosestUrls(purlMap[query[r].PurlName], query[r].PurlName, "", query[r].Requirement)
 		if len(query[r].SelectedURLS) > 0 {
 			query[r].SelectedVersion = query[r].SelectedURLS[0].Version
 			for h := range query[r].SelectedURLS {
-				urlHashes = append(urlHashes, query[r].SelectedURLS[h].UrlHash)
+				urlHashes = append(urlHashes, query[r].SelectedURLS[h].URLHash)
 			}
 		}
 	}
-	//Create a map containing the files for each url
+	// Create a map containing the files for each url
 	files := models.QueryBulkPivotLDB(urlHashes)
 
-	filesUrl := []string{}
+	filesURL := []string{}
 
-	//Create a map containing the Semgrep issue for each file
+	// Create a map containing the Semgrep issue for each file
 	semgrep := models.QueryBulkSemgrepLDB(files)
 
 	retV := dtos.SemgrepOutput{}
 
-	//Create the response
+	// Create the response
 	for r := range query {
 		var semgrepOutItem dtos.SemgrepOutputItem
 
-		//issues := []dtos.IssueItem{}
+		// issues := []dtos.IssueItem{}
 		relatedURLs := query[r].SelectedURLS
 		semgrepOutItem.Version = query[r].SelectedVersion
 		semgrepOutItem.Purl = query[r].CompletePurl
 		for u := range relatedURLs {
-			hash := relatedURLs[u].UrlHash
-			filesInUrl := files[hash]
-			for f := range filesInUrl {
-				if len(semgrep[filesInUrl[f]]) > 0 {
-					fileIssues := dtos.SemgrepFileIssues{File: filesInUrl[f]}
-					filesUrl = append(filesUrl, fmt.Sprintf("%s-%s", filesInUrl[f], hash))
-					for i := range semgrep[filesInUrl[f]] {
-						issue := semgrep[filesInUrl[f]][i]
+			hash := relatedURLs[u].URLHash
+			filesInURL := files[hash]
+			for f := range filesInURL {
+				if len(semgrep[filesInURL[f]]) > 0 {
+					fileIssues := dtos.SemgrepFileIssues{File: filesInURL[f]}
+					filesURL = append(filesURL, fmt.Sprintf("%s-%s", filesInURL[f], hash))
+					for i := range semgrep[filesInURL[f]] {
+						issue := semgrep[filesInURL[f]][i]
 						fileIssues.Issues = append(fileIssues.Issues, dtos.IssueItem{RuleID: issue.RuleID, From: issue.From, To: issue.To, Severity: issue.Severity})
 					}
 					semgrepOutItem.Files = append(semgrepOutItem.Files, fileIssues)
 				}
 			}
 		}
-		paths := models.QueryBulkFileLDB(filesUrl)
+		paths := models.QueryBulkFileLDB(filesURL)
 		for f := range semgrepOutItem.Files {
 			key := semgrepOutItem.Files[f].File
 			semgrepOutItem.Files[f].Path = paths[key]
 			fmt.Println(semgrepOutItem.Files[f].Path)
 		}
 		retV.Purls = append(retV.Purls, semgrepOutItem)
-
 	}
 
 	return retV, nil

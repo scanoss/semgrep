@@ -27,35 +27,31 @@ import (
 	zlog "scanoss.com/semgrep/pkg/logger"
 )
 
-// loadSqlData Load the specified SQL files into the supplied DB
-func loadSqlData(db *sqlx.DB, ctx context.Context, conn *sqlx.Conn, filename string) error {
+// loadSQLData Load the specified SQL files into the supplied DB.
+func loadSQLData(db *sqlx.DB, ctx context.Context, filename string) error {
 	fmt.Printf("Loading test data file: %v\n", filename)
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
-	if conn != nil {
-		_, err = conn.ExecContext(ctx, string(file))
-	} else {
-		_, err = db.Exec(string(file))
-	}
+	_, err = db.ExecContext(ctx, string(file))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// LoadTestSqlData loads all the required test SQL files
-func LoadTestSqlData(db *sqlx.DB, ctx context.Context, conn *sqlx.Conn) error {
-	files := []string{"../models/tests/mines.sql", "../models/tests/all_urls.sql", "../models/tests/projects.sql",
-		"../models/tests/licenses.sql", "../models/tests/versions.sql", "../models/tests/golang_projects.sql"}
-	return loadTestSqlDataFiles(db, ctx, conn, files)
+// LoadTestSQLData loads all the required test SQL files.
+func LoadTestSQLData(db *sqlx.DB, ctx context.Context) error {
+	files := []string{"./tests/mines.sql", "./tests/all_urls.sql", "./tests/projects.sql",
+		"./tests/licenses.sql", "./tests/versions.sql", "./tests/golang_projects.sql"}
+	return loadTestSQLDataFiles(db, ctx, files)
 }
 
-// loadTestSqlDataFiles loads a list of test SQL files
-func loadTestSqlDataFiles(db *sqlx.DB, ctx context.Context, conn *sqlx.Conn, files []string) error {
+// loadTestSQLDataFiles loads a list of test SQL files.
+func loadTestSQLDataFiles(db *sqlx.DB, ctx context.Context, files []string) error {
 	for _, file := range files {
-		err := loadSqlData(db, ctx, conn, file)
+		err := loadSQLData(db, ctx, file)
 		if err != nil {
 			return err
 		}
@@ -63,7 +59,7 @@ func loadTestSqlDataFiles(db *sqlx.DB, ctx context.Context, conn *sqlx.Conn, fil
 	return nil
 }
 
-// CloseDB closes the specified DB and logs any errors
+// CloseDB closes the specified DB and logs any errors.
 func CloseDB(db *sqlx.DB) {
 	if db != nil {
 		zlog.S.Debugf("Closing DB...")
@@ -74,7 +70,7 @@ func CloseDB(db *sqlx.DB) {
 	}
 }
 
-// CloseConn closes the specified DB connection and logs any errors
+// CloseConn closes the specified DB connection and logs any errors.
 func CloseConn(conn *sqlx.Conn) {
 	if conn != nil {
 		zlog.S.Debugf("Closing Connection...")
@@ -85,7 +81,7 @@ func CloseConn(conn *sqlx.Conn) {
 	}
 }
 
-// CloseRows closes the specified DB query row and logs any errors
+// CloseRows closes the specified DB query row and logs any errors.
 func CloseRows(rows *sqlx.Rows) {
 	if rows != nil {
 		zlog.S.Debugf("Closing Rows...")

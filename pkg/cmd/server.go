@@ -42,7 +42,7 @@ import (
 //go:embed version.txt
 var version string
 
-// getConfig checks command line args for option to feed into the config parser
+// getConfig checks command line args for option to feed into the config parser.
 func getConfig() (*myconfig.ServerConfig, error) {
 	var jsonConfig, envConfig string
 	flag.StringVar(&jsonConfig, "json-config", "", "Application JSON config")
@@ -72,15 +72,15 @@ func getConfig() (*myconfig.ServerConfig, error) {
 	return myConfig, err
 }
 
-// closeDbConnection closes the specified DB connection
-func closeDbConnection(db *sqlx.DB) {
+// closeDBConnection closes the specified DB connection.
+func closeDBConnection(db *sqlx.DB) {
 	err := db.Close()
 	if err != nil {
 		zlog.S.Warnf("Problem closing DB: %v", err)
 	}
 }
 
-// RunServer runs the gRPC semgrep Server
+// RunServer runs the gRPC semgrep Server.
 func RunServer() error {
 	// Load command line options and config
 	cfg, err := getConfig()
@@ -90,19 +90,19 @@ func RunServer() error {
 	// Check mode to determine which logger to load
 	switch strings.ToLower(cfg.App.Mode) {
 	case "prod":
-		var err error
+		logErr := error(nil)
 		if cfg.App.Debug {
-			err = zlog.NewSugaredProdLoggerLevel(zapcore.DebugLevel)
+			logErr = zlog.NewSugaredProdLoggerLevel(zapcore.DebugLevel)
 		} else {
-			err = zlog.NewSugaredProdLogger()
+			logErr = zlog.NewSugaredProdLogger()
 		}
-		if err != nil {
-			return fmt.Errorf("failed to load logger: %v", err)
+		if logErr != nil {
+			return fmt.Errorf("failed to load logger: %v", logErr)
 		}
 		zlog.L.Debug("Running with debug enabled")
 	default:
-		if err := zlog.NewSugaredDevLogger(); err != nil {
-			return fmt.Errorf("failed to load logger: %v", err)
+		if logErr := zlog.NewSugaredDevLogger(); logErr != nil {
+			return fmt.Errorf("failed to load logger: %v", logErr)
 		}
 	}
 	defer zlog.SyncZap()
@@ -161,7 +161,7 @@ func RunServer() error {
 		return fmt.Errorf("%s", "Pivot LDB table not found")
 	}
 
-	defer closeDbConnection(db)
+	defer closeDBConnection(db)
 	v2API := service.NewSemgrepServer(db, cfg)
 	ctx := context.Background()
 	return grpc.RunServer(ctx, v2API, cfg.App.Port)

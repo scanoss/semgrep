@@ -36,27 +36,27 @@ type licenseModel struct {
 }
 
 type License struct {
-	Id          int32  `db:"id"`
+	ID          int32  `db:"id"`
 	LicenseName string `db:"license_name"`
-	LicenseId   string `db:"spdx_id"`
+	LicenseID   string `db:"spdx_id"`
 	IsSpdx      bool   `db:"is_spdx"`
 }
 
 var bannedLicPrefixes = []string{"see ", "\"", "'", "-", "*", ".", "/", "?", "@", "\\", ";", ",", "`", "$"} // unwanted license prefixes
 var bannedLicSuffixes = []string{".md", ".txt", ".html"}                                                    // unwanted license suffixes
-var whiteSpaceRegex = regexp.MustCompile("\\s+")                                                            // generic whitespace regex
+var whiteSpaceRegex = regexp.MustCompile(`\s+`)                                                             // generic whitespace regex
 
 // TODO add cache for licenses already searched for?
 
-// NewLicenseModel create a new instance of the License Model
+// NewLicenseModel create a new instance of the License Model.
 func NewLicenseModel(ctx context.Context, conn *sqlx.Conn) *licenseModel {
 	return &licenseModel{ctx: ctx, conn: conn}
 }
 
-// GetLicenseById retrieves license data by the given row ID
-func (m *licenseModel) GetLicenseById(id int32) (License, error) {
+// GetLicenseByID retrieves license data by the given row ID.
+func (m *licenseModel) GetLicenseByID(id int32) (License, error) {
 	if id < 0 {
-		zlog.S.Error("Please specify a valid License Id to query")
+		zlog.S.Error("Please specify a valid License ID to query")
 		return License{}, errors.New("please specify a valid License Name to query")
 	}
 	var license License
@@ -71,7 +71,7 @@ func (m *licenseModel) GetLicenseById(id int32) (License, error) {
 	return license, nil
 }
 
-// GetLicenseByName retrieves the license details for the given license name
+// GetLicenseByName retrieves the license details for the given license name.
 func (m *licenseModel) GetLicenseByName(name string, create bool) (License, error) {
 	if len(name) == 0 {
 		zlog.S.Warnf("No License Name specified to query")
@@ -93,7 +93,7 @@ func (m *licenseModel) GetLicenseByName(name string, create bool) (License, erro
 	return license, nil
 }
 
-// saveLicense writes the given license name to the licenses table
+// saveLicense writes the given license name to the licenses table.
 func (m *licenseModel) saveLicense(name string) (License, error) {
 	if len(name) == 0 {
 		zlog.S.Error("Please specify a valid License Name to save")
@@ -114,7 +114,7 @@ func (m *licenseModel) saveLicense(name string) (License, error) {
 	return license, nil
 }
 
-// CleanseLicenseName cleans up a license name to make it searchable in the licenses table
+// CleanseLicenseName cleans up a license name to make it searchable in the licenses table.
 func CleanseLicenseName(name string) (string, error) {
 	if len(name) > 0 {
 		name = strings.TrimSpace(name)     // remove leading/trailing spaces before even starting
@@ -132,7 +132,7 @@ func CleanseLicenseName(name string) (string, error) {
 		clean := whiteSpaceRegex.ReplaceAllString(name, " ")    // gets rid of new lines, tabs, etc.
 		cleaner := whiteSpaceRegex.ReplaceAllString(clean, " ") // reduces it down to a single space
 		cleanest := strings.ReplaceAll(cleaner, ",", ";")       // swap commas with semicolons
-		//zlog.S.Debugf("in: %v clean: %v cleaner: %v cleanest: %v", name, clean, cleaner, cleanest)
+		// zlog.S.Debugf("in: %v clean: %v cleaner: %v cleanest: %v", name, clean, cleaner, cleanest)
 		return strings.TrimSpace(cleanest), nil // return the cleansed license name
 	}
 	return "", nil // empty string, so just return it.
