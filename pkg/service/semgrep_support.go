@@ -14,6 +14,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+// Package service provides Semgrep support utilities and conversion functions.
+//
+// This package contains helper functions for converting between different data structures
+// used in the Semgrep service, including:
+//   - Converting protobuf request structures to internal DTOs
+//   - Converting internal DTOs to protobuf response structures
 package service
 
 import (
@@ -26,6 +32,13 @@ import (
 	zlog "scanoss.com/semgrep/pkg/logger"
 )
 
+// convertSemgrepInput converts a PurlRequest protobuf structure to a slice of ComponentDTO.
+// Parameters:
+//   - request: A pointer to common.PurlRequest containing PURL data to convert
+//
+// Returns:
+//   - []dtos.ComponentDTO: A slice of converted component DTOs
+//   - error: BadRequestError if the request is nil, empty, or invalid
 func convertSemgrepInput(request *common.PurlRequest) ([]dtos.ComponentDTO, error) {
 	if request == nil || request.Purls == nil || len(request.Purls) == 0 {
 		return []dtos.ComponentDTO{}, se.NewBadRequestError("Request validation failed: 'purls' array is required and must contain at least one component", nil)
@@ -40,7 +53,13 @@ func convertSemgrepInput(request *common.PurlRequest) ([]dtos.ComponentDTO, erro
 	return componentDTOS, nil
 }
 
-// convertPurlRequestInput converts a Purl Request structure into an internal Semgrep Input struct.
+// componentsToComponentsDTO converts a ComponentsRequest protobuf structure to a slice of ComponentDTO.
+// Parameters:
+//   - request: A pointer to common.ComponentsRequest containing component data to convert
+//
+// Returns:
+//   - []dtos.ComponentDTO: A slice of converted component DTOs
+//   - error: BadRequestError if the request is nil, empty, or invalid
 func componentsToComponentsDTO(request *common.ComponentsRequest) ([]dtos.ComponentDTO, error) {
 	if request == nil || request.Components == nil || len(request.Components) == 0 {
 		return []dtos.ComponentDTO{}, se.NewBadRequestError("Request validation failed: 'purls' array is required and must contain at least one component", nil)
@@ -55,7 +74,13 @@ func componentsToComponentsDTO(request *common.ComponentsRequest) ([]dtos.Compon
 	return componentDTOS, nil
 }
 
-// convertSemgrepOutput converts an internal Semgrep Output structure into a SemgrepResponse struct.
+// convertSemgrepResponse converts internal SemgrepOutput to a SemgrepResponse protobuf structure.
+// Parameters:
+//   - output: dtos.SemgrepOutput containing the internal Semgrep analysis results
+//
+// Returns:
+//   - *pb.SemgrepResponse: A pointer to the converted protobuf response structure
+//   - error: InternalError if JSON marshaling/unmarshaling fails
 func convertSemgrepResponse(output dtos.SemgrepOutput) (*pb.SemgrepResponse, error) {
 	data, err := json.Marshal(output)
 	if err != nil {
@@ -72,7 +97,13 @@ func convertSemgrepResponse(output dtos.SemgrepOutput) (*pb.SemgrepResponse, err
 	return &depResp, nil
 }
 
-// convertSemgrepOutput converts an internal Semgrep Output structure into a SemgrepResponse struct.
+// convertToComponentsIssues converts internal SemgrepOutput to ComponentsIssueResponse protobuf structure.
+// Parameters:
+//   - output: dtos.SemgrepOutput containing the internal Semgrep analysis results
+//
+// Returns:
+//   - *pb.ComponentsIssueResponse: A pointer to the response containing issues for all components
+//   - error: InternalError if JSON marshaling/unmarshaling fails during file processing
 func convertToComponentsIssues(output dtos.SemgrepOutput) (*pb.ComponentsIssueResponse, error) {
 	response := &pb.ComponentsIssueResponse{
 		Components: []*pb.ComponentIssueInfo{},
@@ -98,7 +129,14 @@ func convertToComponentsIssues(output dtos.SemgrepOutput) (*pb.ComponentsIssueRe
 	return response, nil
 }
 
-// convertSemgrepOutput converts an internal Semgrep Output structure into a SemgrepResponse struct.
+// convertToComponentIssues converts internal SemgrepOutput to a single ComponentIssueResponse.
+//
+// Parameters:
+//   - output: dtos.SemgrepOutput containing the internal Semgrep analysis results
+//
+// Returns:
+//   - *pb.ComponentIssueResponse: A pointer to the response containing issues for the first component
+//   - error: InternalError if conversion fails, NotFoundError if no components found
 func convertToComponentIssues(output dtos.SemgrepOutput) (*pb.ComponentIssueResponse, error) {
 	componentsIssuesResponse, err := convertToComponentsIssues(output)
 	if err != nil {
