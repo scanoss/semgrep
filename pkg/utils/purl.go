@@ -30,7 +30,7 @@ var pkgRegex = regexp.MustCompile(`^pkg:(?P<type>\w+)/(?P<name>.+)$`) // regex t
 var typeRegex = regexp.MustCompile(`^(npm|nuget)$`)                   // regex to parse purl types that should not be lower cased
 var vRegex = regexp.MustCompile(`^(=|==|)(?P<name>\w+\S+)$`)          // regex to parse purl name from purl string
 
-// PurlFromString takes an input Purl string and returns a decomposed structure of all the elements
+// PurlFromString takes an input Purl string and returns a decomposed structure of all the elements.
 func PurlFromString(purlString string) (packageurl.PackageURL, error) {
 	if len(purlString) == 0 {
 		return packageurl.PackageURL{}, errors.New("no Purl string specified to parse")
@@ -42,7 +42,7 @@ func PurlFromString(purlString string) (packageurl.PackageURL, error) {
 	return purl, nil
 }
 
-// PurlNameFromString take an input Purl string and returns the Purl Name only
+// PurlNameFromString take an input Purl string and returns the Purl Name only.
 func PurlNameFromString(purlString string) (string, error) {
 	if len(purlString) == 0 {
 		return "", fmt.Errorf("no purl string supplied to parse")
@@ -64,11 +64,11 @@ func PurlNameFromString(purlString string) (string, error) {
 	return "", fmt.Errorf("no purl name found in '%v'", purlString)
 }
 
-// ConvertPurlString takes an input PURL and checks to see if anything needs to be modified before search the KB
+// ConvertPurlString takes an input PURL and checks to see if anything needs to be modified before search the KB.
 func ConvertPurlString(purlString string) string {
 	// Replace Golang GitHub package reference with just GitHub
 	if len(purlString) > 0 && strings.HasPrefix(purlString, "pkg:golang/github.com/") {
-		s := strings.Replace(purlString, "pkg:golang/github.com/", "pkg:github/", -1)
+		s := strings.ReplaceAll(purlString, "pkg:golang/github.com/", "pkg:github/")
 		p := strings.Split(s, "/")
 		if len(p) >= 3 {
 			return fmt.Sprintf("%s/%s/%s", p[0], p[1], p[2]) // Only return the GitHub part of the url
@@ -78,10 +78,10 @@ func ConvertPurlString(purlString string) string {
 	return purlString
 }
 
-// GetVersionFromReq parses a requirement string looking for an exact version specifier
+// GetVersionFromReq parses a requirement string looking for an exact version specifier.
 func GetVersionFromReq(purlReq string) string {
 	matches := vRegex.FindStringSubmatch(purlReq)
-	if matches != nil && len(matches) > 0 {
+	if len(matches) > 0 {
 		ni := vRegex.SubexpIndex("name")
 		if ni >= 0 {
 			zlog.S.Debugf("Changing requirement %v to Version %v", purlReq, matches[ni])
@@ -91,8 +91,8 @@ func GetVersionFromReq(purlReq string) string {
 	return ""
 }
 
-// ProjectUrl returns a browsable URL for the given purl type and name
-func ProjectUrl(purlName, purlType string) (string, error) {
+// ProjectURL returns a browsable URL for the given purl type and name.
+func ProjectURL(purlName, purlType string) (string, error) {
 	if len(purlName) == 0 {
 		return "", fmt.Errorf("no purl name supplied")
 	}

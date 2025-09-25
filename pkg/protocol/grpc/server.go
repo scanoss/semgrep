@@ -31,7 +31,7 @@ import (
 
 // TODO Add proper service startup/shutdown here
 
-// RunServer runs gRPC service to publish
+// RunServer runs gRPC service to publish.
 func RunServer(ctx context.Context, v2API pb.SemgrepServer, port string) error {
 	listen, err := net.Listen("tcp", ":"+port)
 	if err != nil {

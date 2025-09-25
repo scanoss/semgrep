@@ -26,106 +26,6 @@ import (
 	zlog "scanoss.com/semgrep/pkg/logger"
 )
 
-//TODO: See failing test
-//func TestAllUrlsSearch(t *testing.T) {
-//	ctx := context.Background()
-//	err := zlog.NewSugaredDevLogger()
-//	if err != nil {
-//		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
-//	}
-//	defer zlog.SyncZap()
-//	db, err := sqlx.Connect("sqlite3", ":memory:")
-//	if err != nil {
-//		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-//	}
-//	defer CloseDB(db)
-//	conn, err := db.Connx(ctx) // Get a connection from the pool
-//	if err != nil {
-//		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-//	}
-//	defer CloseConn(conn)
-//	err = LoadTestSqlData(db, ctx, conn)
-//	if err != nil {
-//		t.Fatalf("failed to load SQL test data: %v", err)
-//	}
-//	myConfig, err := myconfig.NewServerConfig(nil)
-//	if err != nil {
-//		t.Fatalf("failed to load Config: %v", err)
-//	}
-//	myConfig.Components.CommitMissing = true
-//	allUrlsModel := NewAllUrlModel(ctx, conn, NewProjectModel(ctx, conn))
-//
-//	allUrls, err := allUrlsModel.GetUrlsByPurlNameType("tablestyle", "gem", "")
-//	if err != nil {
-//		t.Errorf("all_urls.GetUrlsByPurlName() error = %v", err)
-//	}
-//	if len(allUrls.PurlName) == 0 {
-//		t.Errorf("all_urls.GetUrlsByPurlName() No URLs returned from query")
-//	}
-//	fmt.Printf("All Urls: %#v\n", allUrls)
-//
-//	allUrls, err = allUrlsModel.GetUrlsByPurlNameType("NONEXISTENT", "none", "")
-//	if err != nil {
-//		t.Errorf("all_urls.GetUrlsByPurlName() error = %v", err)
-//	}
-//	if len(allUrls.PurlName) > 0 {
-//		t.Errorf("all_urls.GetUrlsByPurlNameType() URLs found when none should be: %v", allUrlsModel)
-//	}
-//	fmt.Printf("No Urls: %v\n", allUrls)
-//
-//	_, err = allUrlsModel.GetUrlsByPurlNameType("NONEXISTENT", "", "")
-//	if err == nil {
-//		t.Errorf("all_urls.GetUrlsByPurlString() error = did not get an error")
-//	} else {
-//		fmt.Printf("Got expected error = %v\n", err)
-//	}
-//	_, err = allUrlsModel.GetUrlsByPurlNameType("", "", "")
-//	if err == nil {
-//		t.Errorf("all_urls.GetUrlsByPurlString() error = did not get an error")
-//	} else {
-//		fmt.Printf("Got expected error = %v\n", err)
-//	}
-//	_, err = allUrlsModel.GetUrlsByPurlString("", "")
-//	if err == nil {
-//		t.Errorf("all_urls.GetUrlsByPurlString() error = did not get an error")
-//	} else {
-//		fmt.Printf("Got expected error = %v\n", err)
-//	}
-//	_, err = allUrlsModel.GetUrlsByPurlString("rubbish-purl", "")
-//	if err == nil {
-//		t.Errorf("all_urls.GetUrlsByPurlString() error = did not get an error")
-//	} else {
-//		fmt.Printf("Got expected error = %v\n", err)
-//	}
-//	allUrls, err = allUrlsModel.GetUrlsByPurlString("pkg:gem/tablestyle", "")
-//	if err != nil {
-//		t.Errorf("all_urls.GetUrlsByPurlString() error = %v", err)
-//	}
-//	if len(allUrls.PurlName) == 0 {
-//		t.Errorf("all_urls.GetUrlsByPurlString() No URLs returned from query")
-//	}
-//	fmt.Printf("All Urls: %v\n", allUrls)
-//
-//	allUrls, err = allUrlsModel.GetUrlsByPurlString("pkg:golang/google.golang.org/grpc", "")
-//	if err != nil {
-//		t.Errorf("all_urls.GetUrlsByPurlString() error = %v", err)
-//	}
-//	if len(allUrls.PurlName) == 0 {
-//		t.Errorf("all_urls.GetUrlsByPurlString() No URLs returned from query")
-//	}
-//	fmt.Printf("Golang Url: %v\n", allUrls)
-//
-//	fmt.Printf("Searching for pkg:golang/github.com/scanoss/dependencies")
-//	allUrls, err = allUrlsModel.GetUrlsByPurlString("pkg:golang/github.com/scanoss/dependencies", "")
-//	if err != nil {
-//		t.Errorf("all_urls.GetUrlsByPurlString() error = %v", err)
-//	}
-//	if len(allUrls.PurlName) == 0 {
-//		t.Errorf("all_urls.GetUrlsByPurlString() No URLs returned from query")
-//	}
-//	fmt.Printf("Golang Url: %v\n", allUrls)
-//}
-
 func TestAllUrlsSearchVersion(t *testing.T) {
 	ctx := context.Background()
 	err := zlog.NewSugaredDevLogger()
@@ -137,13 +37,8 @@ func TestAllUrlsSearchVersion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer CloseDB(db)
-	conn, err := db.Connx(ctx) // Get a connection from the pool
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-	}
-	defer CloseConn(conn)
-	err = LoadTestSqlData(db, ctx, conn)
+	defer db.Close()
+	err = LoadTestSQLData(db, ctx)
 	if err != nil {
 		t.Fatalf("failed to load SQL test data: %v", err)
 	}
@@ -152,9 +47,9 @@ func TestAllUrlsSearchVersion(t *testing.T) {
 		t.Fatalf("failed to load Config: %v", err)
 	}
 	myConfig.Components.CommitMissing = true
-	allUrlsModel := NewAllUrlModel(ctx, conn, NewProjectModel(ctx, conn))
+	allUrlsModel := NewAllURLModel(db, NewProjectModel(db))
 
-	allUrls, err := allUrlsModel.GetUrlsByPurlNameTypeVersion("tablestyle", "gem", "0.0.12")
+	allUrls, err := allUrlsModel.GetUrlsByPurlNameTypeVersion(ctx, "tablestyle", "gem", "0.0.12")
 	if err != nil {
 		t.Errorf("all_urls.GetUrlsByPurlName() error = %v", err)
 	}
@@ -163,32 +58,32 @@ func TestAllUrlsSearchVersion(t *testing.T) {
 	}
 	fmt.Printf("All Urls Version: %#v\n", allUrls)
 
-	allUrls, err = allUrlsModel.GetUrlsByPurlString("pkg:gem/tablestyle@0.0.7", "")
+	allUrls, err = allUrlsModel.GetUrlsByPurlString(ctx, "pkg:gem/tablestyle@0.0.7", "")
 	if err != nil {
 		t.Errorf("all_urls.GetUrlsByPurlString() error = failed to find purl by version string")
 	}
 	fmt.Printf("All Urls Version String: %#v\n", allUrls)
 
-	_, err = allUrlsModel.GetUrlsByPurlNameTypeVersion("", "", "")
+	_, err = allUrlsModel.GetUrlsByPurlNameTypeVersion(ctx, "", "", "")
 	if err == nil {
 		t.Errorf("all_urls.GetUrlsByPurlNameTypeVersion() error = did not get an error")
 	} else {
 		fmt.Printf("Got expected error = %v\n", err)
 	}
-	_, err = allUrlsModel.GetUrlsByPurlNameTypeVersion("NONEXISTENT", "", "")
+	_, err = allUrlsModel.GetUrlsByPurlNameTypeVersion(ctx, "NONEXISTENT", "", "")
 	if err == nil {
 		t.Errorf("all_urls.GetUrlsByPurlNameTypeVersion() error = did not get an error")
 	} else {
 		fmt.Printf("Got expected error = %v\n", err)
 	}
-	_, err = allUrlsModel.GetUrlsByPurlNameTypeVersion("NONEXISTENT", "NONEXISTENT", "")
+	_, err = allUrlsModel.GetUrlsByPurlNameTypeVersion(ctx, "NONEXISTENT", "NONEXISTENT", "")
 	if err == nil {
 		t.Errorf("all_urls.GetUrlsByPurlNameTypeVersion() error = did not get an error")
 	} else {
 		fmt.Printf("Got expected error = %v\n", err)
 	}
 
-	allUrls, err = allUrlsModel.GetUrlsByPurlString("pkg:gem/tablestyle", "22.22.22") // Shouldn't exist
+	allUrls, err = allUrlsModel.GetUrlsByPurlString(ctx, "pkg:gem/tablestyle", "22.22.22") // Shouldn't exist
 	if err != nil {
 		t.Errorf("all_urls.GetUrlsByPurlString() error = failed to find purl by version string")
 	}
@@ -208,13 +103,8 @@ func TestAllUrlsSearchVersionRequirement(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer CloseDB(db)
-	conn, err := db.Connx(ctx) // Get a connection from the pool
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-	}
-	defer CloseConn(conn)
-	err = LoadTestSqlData(db, ctx, conn)
+	defer db.Close()
+	err = LoadTestSQLData(db, ctx)
 	if err != nil {
 		t.Fatalf("failed to load SQL test data: %v", err)
 	}
@@ -223,9 +113,9 @@ func TestAllUrlsSearchVersionRequirement(t *testing.T) {
 		t.Fatalf("failed to load Config: %v", err)
 	}
 	myConfig.Components.CommitMissing = true
-	allUrlsModel := NewAllUrlModel(ctx, conn, NewProjectModel(ctx, conn))
+	allUrlsModel := NewAllURLModel(db, NewProjectModel(db))
 
-	allUrls, err := allUrlsModel.GetUrlsByPurlString("pkg:gem/tablestyle", ">0.0.4")
+	allUrls, err := allUrlsModel.GetUrlsByPurlString(ctx, "pkg:gem/tablestyle", ">0.0.4")
 	if err != nil {
 		t.Errorf("all_urls.GetUrlsByPurlName() error = %v", err)
 	}
@@ -234,7 +124,7 @@ func TestAllUrlsSearchVersionRequirement(t *testing.T) {
 	}
 	fmt.Printf("All Urls Version: %#v\n", allUrls)
 
-	allUrls, err = allUrlsModel.GetUrlsByPurlString("pkg:gem/tablestyle", "<0.0.4>")
+	allUrls, err = allUrlsModel.GetUrlsByPurlString(ctx, "pkg:gem/tablestyle", "<0.0.4>")
 	if err != nil {
 		t.Errorf("all_urls.GetUrlsByPurlName() error = %v", err)
 	}
@@ -255,13 +145,13 @@ func TestAllUrlsSearchNoProject(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer CloseDB(db)
+	defer db.Close()
 	conn, err := db.Connx(ctx) // Get a connection from the pool
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer CloseConn(conn)
-	err = LoadTestSqlData(db, ctx, conn)
+	err = LoadTestSQLData(db, ctx)
 	if err != nil {
 		t.Fatalf("failed to load SQL test data: %v", err)
 	}
@@ -270,9 +160,9 @@ func TestAllUrlsSearchNoProject(t *testing.T) {
 		t.Fatalf("failed to load Config: %v", err)
 	}
 	myConfig.Components.CommitMissing = true
-	allUrlsModel := NewAllUrlModel(ctx, conn, nil)
+	allUrlsModel := NewAllURLModel(db, NewProjectModel(db))
 
-	allUrls, err := allUrlsModel.GetUrlsByPurlNameType("tablestyle", "gem", "0.0.8")
+	allUrls, err := allUrlsModel.GetUrlsByPurlNameType(ctx, "tablestyle", "gem", "0.0.8")
 	if err != nil {
 		t.Errorf("all_urls.GetUrlsByPurlName() error = %v", err)
 	}
@@ -294,12 +184,7 @@ func TestAllUrlsSearchNoLicense(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer CloseDB(db)
-	conn, err := db.Connx(ctx) // Get a connection from the pool
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-	}
-	defer CloseConn(conn)
-	err = LoadTestSqlData(db, ctx, conn)
+	err = LoadTestSQLData(db, ctx)
 	if err != nil {
 		t.Fatalf("failed to load SQL test data: %v", err)
 	}
@@ -308,9 +193,9 @@ func TestAllUrlsSearchNoLicense(t *testing.T) {
 		t.Fatalf("failed to load Config: %v", err)
 	}
 	myConfig.Components.CommitMissing = true
-	allUrlsModel := NewAllUrlModel(ctx, conn, NewProjectModel(ctx, conn))
+	allUrlsModel := NewAllURLModel(db, NewProjectModel(db))
 
-	allUrls, err := allUrlsModel.GetUrlsByPurlString("pkg:gem/tablestyle@0.0.8", "")
+	allUrls, err := allUrlsModel.GetUrlsByPurlString(ctx, "pkg:gem/tablestyle@0.0.8", "")
 	if err != nil {
 		t.Errorf("all_urls.GetUrlsByPurlString() error = %v", err)
 	}
@@ -331,7 +216,7 @@ func TestAllUrlsSearchBadSql(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer CloseDB(db)
+	defer db.Close()
 	conn, err := db.Connx(ctx) // Get a connection from the pool
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -342,26 +227,26 @@ func TestAllUrlsSearchBadSql(t *testing.T) {
 		t.Fatalf("failed to load Config: %v", err)
 	}
 	myConfig.Components.CommitMissing = true
-	allUrlsModel := NewAllUrlModel(ctx, conn, NewProjectModel(ctx, conn))
-	_, err = allUrlsModel.GetUrlsByPurlString("pkg:gem/tablestyle", "")
+	allUrlsModel := NewAllURLModel(db, NewProjectModel(db))
+	_, err = allUrlsModel.GetUrlsByPurlString(ctx, "pkg:gem/tablestyle", "")
 	if err == nil {
 		t.Errorf("all_urls.GetUrlsByPurlString() error = did not get an error")
 	} else {
 		fmt.Printf("Got expected error = %v\n", err)
 	}
-	_, err = allUrlsModel.GetUrlsByPurlString("pkg:gem/tablestyle@0.0.8", "")
+	_, err = allUrlsModel.GetUrlsByPurlString(ctx, "pkg:gem/tablestyle@0.0.8", "")
 	if err == nil {
 		t.Errorf("all_urls.GetUrlsByPurlString() error = did not get an error: %v", err)
 	} else {
 		fmt.Printf("Got expected error = %v\n", err)
 	}
 	// Load some tables (leaving out projects)
-	err = loadTestSqlDataFiles(db, ctx, conn, []string{"./tests/mines.sql", "./tests/all_urls.sql", "./tests/licenses.sql", "./tests/versions.sql"})
+	err = loadTestSQLDataFiles(db, ctx, []string{"./tests/mines.sql", "./tests/all_urls.sql", "./tests/licenses.sql", "./tests/versions.sql"})
 	if err != nil {
 		t.Fatalf("failed to load SQL test data: %v", err)
 	}
 	//allUrls, err := allUrlsModel.GetUrlsByPurlNameType("tablestyle", "gem", "")
-	allUrls, err := allUrlsModel.GetUrlsByPurlString("pkg:gem/tablestyle@0.0.8", "")
+	allUrls, err := allUrlsModel.GetUrlsByPurlString(ctx, "pkg:gem/tablestyle@0.0.8", "")
 	if err != nil {
 		t.Errorf("all_urls.GetUrlsByPurlName() error = %v", err)
 	}

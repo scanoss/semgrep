@@ -32,7 +32,7 @@ type SemgrepInputItem struct {
 	Requirement string `json:"requirement,omitempty"`
 }
 
-// ParseSemgrepInput converts the input byte array to a SemgrepInput structure
+// ParseSemgrepInput converts the input byte array to a SemgrepInput structure.
 func ParseSemgrepInput(input []byte) (SemgrepInput, error) {
 	fmt.Println(string(input))
 	if len(input) == 0 {

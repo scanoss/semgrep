@@ -17,6 +17,7 @@
 package models
 
 import (
+	"context"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"testing"
@@ -27,24 +28,25 @@ func TestDbLoad(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer CloseDB(db)
-	err = loadSqlData(db, nil, nil, "./tests/mines.sql")
+	defer db.Close()
+	ctx := context.Background()
+	err = loadSQLData(db, ctx, "./tests/mines.sql")
 	if err != nil {
 		t.Errorf("failed to load SQL test data: %v", err)
 	}
-	err = LoadTestSqlData(db, nil, nil)
+	err = LoadTestSQLData(db, ctx)
 	if err != nil {
 		t.Errorf("failed to load SQL test data: %v", err)
 	}
-	err = loadSqlData(db, nil, nil, "./tests/does-not-exist.sql")
+	err = loadSQLData(db, ctx, "./tests/does-not-exist.sql")
 	if err == nil {
 		t.Errorf("did not fail to load SQL test data")
 	}
-	err = loadTestSqlDataFiles(db, nil, nil, []string{"./tests/does-not-exist.sql"})
+	err = loadTestSQLDataFiles(db, ctx, []string{"./tests/does-not-exist.sql"})
 	if err == nil {
 		t.Errorf("did not fail to load SQL test data")
 	}
-	err = loadSqlData(db, nil, nil, "./tests/bad_sql.sql")
+	err = loadSQLData(db, ctx, "./tests/bad_sql.sql")
 	if err == nil {
 		t.Errorf("did not fail to load SQL test data")
 	}

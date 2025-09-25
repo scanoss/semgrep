@@ -11,13 +11,12 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/mattn/go-sqlite3 v1.14.10
 	github.com/package-url/packageurl-go v0.1.0
-	github.com/scanoss/papi v0.2.0
+	github.com/scanoss/papi v0.24.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.73.0
 )
 
 require (
-	cloud.google.com/go/compute v1.23.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
@@ -34,7 +33,6 @@ require (
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
-	google.golang.org/genproto v0.0.0-20230822172742-b8732ec3820d
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
@@ -43,5 +41,3 @@ require (
 // https://github.com/golang/go/wiki/Modules#when-should-i-use-the-replace-directive
 // ie. replace github.com/scanoss/papi => ../papi
 // require github.com/scanoss/papi v0.0.0-unpublished
-
-replace github.com/scanoss/papi => ../papi
