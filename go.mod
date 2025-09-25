@@ -2,8 +2,6 @@ module scanoss.com/semgrep
 
 go 1.24
 
-toolchain go1.24.7
-
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/golobby/config/v3 v3.3.1
