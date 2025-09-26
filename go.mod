@@ -3,13 +3,13 @@ module scanoss.com/semgrep
 go 1.24
 
 require (
-	github.com/Masterminds/semver/v3 v3.1.1
-	github.com/golobby/config/v3 v3.3.1
+	github.com/Masterminds/semver/v3 v3.4.0
+	github.com/golobby/config/v3 v3.4.2
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
-	github.com/mattn/go-sqlite3 v1.14.22
+	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/scanoss/go-grpc-helper v0.9.0
 	github.com/scanoss/go-purl-helper v0.2.1
 	github.com/scanoss/papi v0.24.0
@@ -25,14 +25,14 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v0.4.1 // indirect
+	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/golobby/cast v1.3.0 // indirect
-	github.com/golobby/dotenv v1.3.1 // indirect
-	github.com/golobby/env/v2 v2.2.0 // indirect
+	github.com/golobby/cast v1.3.3 // indirect
+	github.com/golobby/dotenv v1.3.2 // indirect
+	github.com/golobby/env/v2 v2.2.4 // indirect
 	github.com/package-url/packageurl-go v0.1.3 // indirect
 	github.com/phuslu/iploc v1.0.20230201 // indirect
 	github.com/scanoss/ipfilter/v2 v2.0.2 // indirect
