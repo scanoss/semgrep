@@ -22,8 +22,8 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
+	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 	myconfig "scanoss.com/semgrep/pkg/config"
-	zlog "scanoss.com/semgrep/pkg/logger"
 )
 
 func TestAllUrlsSearchVersion(t *testing.T) {

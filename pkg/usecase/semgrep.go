@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	purlHelper "github.com/scanoss/go-purl-helper/pkg"
 	"go.uber.org/zap"
 	"scanoss.com/semgrep/pkg/dtos"
 	"scanoss.com/semgrep/pkg/models"
@@ -64,7 +65,7 @@ func (d SemgrepUseCase) GetIssues(ctx context.Context, s *zap.SugaredLogger, com
 			c.Requirement = purlReq[1]
 		}
 
-		purlName, err := utils.PurlNameFromString(c.Purl) // Make sure we just have the bare minimum for a Purl Name
+		purlName, err := purlHelper.PurlNameFromString(c.Purl) // Make sure we just have the bare minimum for a Purl Name
 		if err == nil {
 			purlsToQuery = append(purlsToQuery, utils.PurlReq{Purl: purlName, Version: c.Requirement})
 		}
