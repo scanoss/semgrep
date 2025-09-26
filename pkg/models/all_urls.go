@@ -25,9 +25,8 @@ import (
 
 	semver "github.com/Masterminds/semver/v3"
 	"github.com/jmoiron/sqlx"
+	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 	"go.uber.org/zap"
-	zlog "scanoss.com/semgrep/pkg/logger"
-
 	"scanoss.com/semgrep/pkg/utils"
 )
 

@@ -27,7 +27,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
-	zlog "scanoss.com/semgrep/pkg/logger"
+	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 )
 
 type licenseModel struct {

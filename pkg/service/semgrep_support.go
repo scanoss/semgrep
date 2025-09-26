@@ -27,9 +27,10 @@ import (
 
 	common "github.com/scanoss/papi/api/commonv2"
 	pb "github.com/scanoss/papi/api/semgrepv2"
+
+	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 	"scanoss.com/semgrep/pkg/dtos"
 	se "scanoss.com/semgrep/pkg/errors"
-	zlog "scanoss.com/semgrep/pkg/logger"
 )
 
 // convertSemgrepInput converts a PurlRequest protobuf structure to a slice of ComponentDTO.

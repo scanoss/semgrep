@@ -28,8 +28,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	common "github.com/scanoss/papi/api/commonv2"
 	pb "github.com/scanoss/papi/api/semgrepv2"
+	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 	myconfig "scanoss.com/semgrep/pkg/config"
-	zlog "scanoss.com/semgrep/pkg/logger"
 	"scanoss.com/semgrep/pkg/usecase"
 )
 

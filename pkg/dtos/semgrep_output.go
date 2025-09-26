@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 
-	zlog "scanoss.com/semgrep/pkg/logger"
+	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 )
 
 type SemgrepOutput struct {
