@@ -25,6 +25,7 @@ import (
 
 	semver "github.com/Masterminds/semver/v3"
 	"github.com/jmoiron/sqlx"
+	purlhelper "github.com/scanoss/go-purl-helper/pkg"
 	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 	"go.uber.org/zap"
 	"scanoss.com/semgrep/pkg/utils"
@@ -86,16 +87,16 @@ func (m *AllUrlsModel) GetUrlsByPurlString(ctx context.Context, purlString, purl
 		zlog.S.Errorf("Please specify a valid Purl String to query")
 		return AllURL{}, errors.New("please specify a valid Purl String to query")
 	}
-	purl, err := utils.PurlFromString(purlString)
+	purl, err := purlhelper.PurlFromString(purlString)
 	if err != nil {
 		return AllURL{}, err
 	}
-	purlName, err := utils.PurlNameFromString(purlString) // Make sure we just have the bare minimum for a Purl Name
+	purlName, err := purlhelper.PurlNameFromString(purlString) // Make sure we just have the bare minimum for a Purl Name
 	if err != nil {
 		return AllURL{}, err
 	}
 	if len(purl.Version) == 0 && len(purlReq) > 0 { // No version specified, but we might have a specific version in the Requirement
-		ver := utils.GetVersionFromReq(purlReq)
+		ver := purlhelper.GetVersionFromReq(purlReq)
 		if len(ver) > 0 {
 			// TODO check what to do if we get a "file" requirement
 			purl.Version = ver // Switch to exact version search (faster)
@@ -232,7 +233,7 @@ func pickOneURL(allUrls []AllURL, purlName, purlType, purlReq string) (AllURL, e
 		zlog.S.Errorf("Problem retrieving URL data for %v (%v, %v)", version, purlName, purlType)
 		return AllURL{}, fmt.Errorf("failed to retrieve specific URL version: %v", version)
 	}
-	url.URL, _ = utils.ProjectURL(purlName, purlType)
+	url.URL, _ = purlhelper.ProjectUrl(purlName, purlType)
 
 	zlog.S.Debugf("Selected version: %#v", url)
 	return url, nil // Return the best component match

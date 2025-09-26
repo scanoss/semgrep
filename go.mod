@@ -10,8 +10,8 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.22
-	github.com/package-url/packageurl-go v0.1.0
 	github.com/scanoss/go-grpc-helper v0.9.0
+	github.com/scanoss/go-purl-helper v0.2.1
 	github.com/scanoss/papi v0.24.0
 	github.com/scanoss/zap-logging-helper v0.4.0
 	go.uber.org/zap v1.27.0
@@ -33,6 +33,7 @@ require (
 	github.com/golobby/cast v1.3.0 // indirect
 	github.com/golobby/dotenv v1.3.1 // indirect
 	github.com/golobby/env/v2 v2.2.0 // indirect
+	github.com/package-url/packageurl-go v0.1.3 // indirect
 	github.com/phuslu/iploc v1.0.20230201 // indirect
 	github.com/scanoss/ipfilter/v2 v2.0.2 // indirect
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce // indirect
