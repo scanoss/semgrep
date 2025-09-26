@@ -21,6 +21,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -29,12 +30,15 @@ import (
 	"github.com/golobby/config/v3/pkg/feeder"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	gs "github.com/scanoss/go-grpc-helper/pkg/grpc/server"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/scanoss/go-grpc-helper/pkg/files"
+	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 	myconfig "scanoss.com/semgrep/pkg/config"
-	zlog "scanoss.com/semgrep/pkg/logger"
 	m "scanoss.com/semgrep/pkg/models"
 	"scanoss.com/semgrep/pkg/protocol/grpc"
+	"scanoss.com/semgrep/pkg/protocol/rest"
 	"scanoss.com/semgrep/pkg/service"
 )
 
@@ -88,6 +92,23 @@ func RunServer() error {
 		return fmt.Errorf("failed to load config: %v", err)
 	}
 	// Check mode to determine which logger to load
+
+	err = zlog.SetupAppLogger(cfg.App.Mode, cfg.Logging.ConfigFile, cfg.App.Debug)
+	if err != nil {
+		return err
+	}
+	defer zlog.SyncZap()
+	// Check if TLS/SSL should be enabled
+	startTLS, err := files.CheckTLS(cfg.TLS.CertFile, cfg.TLS.KeyFile)
+	if err != nil {
+		return err
+	}
+	// Check if IP filtering should be enabled
+	allowedIPs, deniedIPs, err := files.LoadFiltering(cfg.Filtering.AllowListFile, cfg.Filtering.DenyListFile)
+	if err != nil {
+		return err
+	}
+
 	switch strings.ToLower(cfg.App.Mode) {
 	case "prod":
 		logErr := error(nil)
@@ -164,5 +185,20 @@ func RunServer() error {
 	defer closeDBConnection(db)
 	v2API := service.NewSemgrepServer(db, cfg)
 	ctx := context.Background()
-	return grpc.RunServer(ctx, v2API, cfg.App.Port)
+
+	// Start the REST grpc-gateway if requested
+	var srv *http.Server
+	if len(cfg.App.RESTPort) > 0 {
+		if srv, err = rest.RunServer(cfg, ctx, cfg.App.GRPCPort, cfg.App.RESTPort, allowedIPs, deniedIPs, startTLS); err != nil {
+			return err
+		}
+	}
+	// Start the gRPC service
+	server, err := grpc.RunServer(cfg, v2API, cfg.App.GRPCPort, allowedIPs, deniedIPs, startTLS, version)
+	if err != nil {
+		return err
+	}
+
+	// graceful shutdown
+	return gs.WaitServerComplete(srv, server)
 }
