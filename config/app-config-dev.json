@@ -3,7 +3,9 @@
     "Name": "SCANOSS Semgrep Service",
     "Debug": true,
     "Mode":  "dev",
-    "Port": "50055"
+    "GRPCPort": "50051",
+    "RESTPort": "40051",
+    "GRPCReflection": false
   },
   "LDB": {
     "BinPath": "/usr/local/bin/ldb",
@@ -21,5 +23,15 @@
   },
   "Components": {
     "CommitMissing": false
+  },
+  "TLS": {
+    "CertFile": "",
+    "KeyFile": ""
+  },
+  "Filtering": {
+    "AllowListFile": "",
+    "DenyListFile": "",
+    "BlockByDefault": false,
+    "TrustProxy": false
   }
 }
