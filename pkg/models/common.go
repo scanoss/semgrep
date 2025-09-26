@@ -24,7 +24,7 @@ import (
 	"io/ioutil"
 
 	"github.com/jmoiron/sqlx"
-	zlog "scanoss.com/semgrep/pkg/logger"
+	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 )
 
 // loadSQLData Load the specified SQL files into the supplied DB.
