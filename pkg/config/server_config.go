@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	defaultGrpcPort = "50051"
-	defaultRestPort = "40051"
+	defaultGrpcPort = "50051" //TODO: Check default gRPC port for semgrep service
+	defaultRestPort = "40051" //TODO: Check default REST port for semgrep service
 )
 
 // ServerConfig is configuration for Server.
