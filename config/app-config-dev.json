@@ -3,8 +3,8 @@
     "Name": "SCANOSS Semgrep Service",
     "Debug": true,
     "Mode":  "dev",
-    "GRPCPort": "50051",
-    "RESTPort": "40051",
+    "GRPCPort": "50055",
+    "RESTPort": "40055",
     "GRPCReflection": false
   },
   "LDB": {
