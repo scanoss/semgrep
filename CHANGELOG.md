@@ -23,7 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated dependencies to latest versions
 ### Refactored
 - Refactor on semgrep service
-
+### Fixed 
+- Fixed incorrect artifact names in release workflow
 
 ## [0.0.1] - ?
 ### Added
