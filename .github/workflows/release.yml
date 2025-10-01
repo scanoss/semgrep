@@ -39,5 +39,5 @@ jobs:
           files: |
             target/scanoss-semgrep-api-linux-amd64
             target/scanoss-semgrep-api-linux-arm64
-            scanoss-semgrep_linux-amd64_${{ github.ref_name }}-1.tgz
-            scanoss-semgrep_linux-arm64_${{ github.ref_name }}-1.tgz
+            scanoss-semgrep-api_linux-amd64_${{ github.ref_name }}-1.tgz
+            scanoss-semgrep-api_linux-arm64_${{ github.ref_name }}-1.tgz
