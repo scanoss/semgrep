@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Upcoming changes...
 
+## [0.3.0] - 2026-06-22
+### Added
+- `/health` liveness endpoint (GET) on the REST gateway
+### Changed
+- Upgraded `scanoss/go-grpc-helper` to `v0.16.0`
+
 ## [0.2.0] - 2025-09-29
 ### Added
 - Added gRPC `GetComponentsIssues` and REST endpoint POST `/v2/semgrep/issues/components` for Semgrep security analysis
@@ -30,5 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - ?
 
+[0.3.0]: https://github.com/scanoss/semgrep/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/scanoss/semgrep/compare/v0.1.0...v0.2.0
 [0.0.1]: https://github.com/scanoss/semgrep/compare/v0.0.0...v0.0.1
