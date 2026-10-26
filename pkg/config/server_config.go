@@ -51,7 +51,7 @@ type ServerConfig struct {
 		Driver  string `env:"DB_DRIVER"`
 		Host    string `env:"DB_HOST"`
 		User    string `env:"DB_USER"`
-		Passwd  string `env:"DB_PASSWD"`
+		Passwd  string `env:"DB_PASSWD"` //nolint:gosec // loaded from the environment, not a hardcoded secret
 		Schema  string `env:"DB_SCHEMA"`
 		SslMode string `env:"DB_SSL_MODE"` // enable/disable
 		Dsn     string `env:"DB_DSN"`
